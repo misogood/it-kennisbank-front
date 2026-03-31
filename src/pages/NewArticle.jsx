@@ -1,120 +1,111 @@
-import React from 'react';
-import { ArrowLeft, FileText } from 'lucide-react';
+import React, { useState } from 'react';
+import { BookOpen, Save, FileText, Tag, Layout } from 'lucide-react';
 
 export default function NewArticle() {
+  const [title, setTitle] = useState('');
+  const [category, setCategory] = useState('Troubleshooting');
+  const [tags, setTags] = useState('');
+  const [content, setContent] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault(); // Dit voorkomt dat de pagina ongewenst herlaadt
+    setIsSubmitting(true);
+
+    const newArticleData = {
+      title: title,
+      category: category,
+      content: content,
+      tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '') 
+    };
+
+    try {
+      // Stuur het naar de backend
+      const response = await fetch('http://localhost:5000/api/articles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newArticleData)
+      });
+
+      if (response.ok) {
+        alert('🎉 Succes! Je artikel is opgeslagen in de database.\n\nKlik op OK en ga naar je Admin Dashboard (of Home) om hem te zien!');
+        // Maak vakjes leeg
+        setTitle('');
+        setCategory('Troubleshooting');
+        setTags('');
+        setContent('');
+      } else {
+        alert('Oeps, de server gaf een foutmelding terug.');
+      }
+    } catch (error) {
+      console.error("Er ging iets mis:", error);
+      alert('Kan de server niet bereiken. Staat je backend aan op poort 5000?');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="bg-[#FAFAFA] min-h-screen flex flex-col font-sans text-gray-900 pb-12">
-      
-      {/* 1. Header met Terug-knop */}
-      <nav className="bg-white border-b border-gray-200 px-6 py-4 flex items-center sticky top-0 z-10">
-        <div className="flex items-center gap-6">
-          <button className="flex items-center gap-2 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-medium transition shadow-sm">
-            <ArrowLeft className="w-4 h-4" /> Back
-          </button>
-          <h1 className="text-xl font-bold text-gray-900">New Article</h1>
+      <nav className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+        <div className="flex items-center gap-2 font-bold text-xl text-gray-900">
+          <BookOpen className="text-blue-600 w-6 h-6" />
+          Create New Article
         </div>
       </nav>
 
-      {/* 2. Formulier Container */}
-      <main className="max-w-4xl mx-auto w-full px-4 sm:px-6 pt-8">
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8">
-          
-          <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+      <main className="max-w-4xl mx-auto px-6 w-full pt-8">
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
             
-            {/* Article Title */}
             <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                Article Title
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                <FileText className="w-4 h-4 text-gray-400" /> Article Title
               </label>
               <input 
-                type="text" 
-                id="title"
-                placeholder="Enter article title" 
-                className="w-full bg-gray-50 border border-transparent rounded-lg px-4 py-2.5 text-sm focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition"
+                type="text" required value={title} onChange={(e) => setTitle(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-2.5 text-sm"
               />
             </div>
 
-            {/* Category Dropdown */}
-            <div>
-              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
-                Category
-              </label>
-              <select 
-                id="category"
-                className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition appearance-none cursor-pointer"
-                style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: `right 0.5rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em`, paddingRight: `2.5rem` }}
-              >
-                <option>Network & Connectivity</option>
-                <option>Hardware & Devices</option>
-                <option>Software & Applications</option>
-                <option>Security & Access</option>
-                <option>Email & Communication</option>
-                <option>Troubleshooting</option>
-              </select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                  <Layout className="w-4 h-4 text-gray-400" /> Category
+                </label>
+                <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-2.5 text-sm">
+                  <option value="Troubleshooting">Troubleshooting</option>
+                  <option value="Network & Connectivity">Network & Connectivity</option>
+                  <option value="Hardware">Hardware</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                  <Tag className="w-4 h-4 text-gray-400" /> Tags (comma separated)
+                </label>
+                <input type="text" value={tags} onChange={(e) => setTags(e.target.value)} className="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-2.5 text-sm" />
+              </div>
             </div>
 
-            {/* Short Description */}
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                Short Description
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                <BookOpen className="w-4 h-4 text-gray-400" /> Article Content
               </label>
-              <textarea 
-                id="description"
-                rows="3"
-                placeholder="Brief description of the article" 
-                className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition resize-y"
-              ></textarea>
+              <textarea required value={content} onChange={(e) => setContent(e.target.value)} className="w-full h-64 bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-sm font-mono"></textarea>
             </div>
 
-            {/* Tags */}
-            <div>
-              <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-2">
-                Tags (comma-separated)
-              </label>
-              <input 
-                type="text" 
-                id="tags"
-                placeholder="vpn, remote, access" 
-                className="w-full bg-gray-50 border border-transparent rounded-lg px-4 py-2.5 text-sm focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition"
-              />
-              <p className="text-xs text-gray-500 mt-1.5">Enter tags separated by commas</p>
-            </div>
-
-            {/* Article Content (Markdown) */}
-            <div>
-              <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
-                Article Content (Markdown supported)
-              </label>
-              <textarea 
-                id="content"
-                rows="14"
-                placeholder="Enter the full article content in Markdown format..." 
-                className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition resize-y font-mono"
-              ></textarea>
-              <p className="text-xs text-gray-500 mt-2">Use Markdown formatting: # for headings, ** for bold, * for italic, etc.</p>
-            </div>
-
-            {/* Action Buttons (Onderaan) */}
-            <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-100">
-              <button 
-                type="button" 
-                className="border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 px-6 py-2.5 rounded-lg text-sm font-medium transition shadow-sm"
-              >
-                Cancel
-              </button>
-              <button 
-                type="submit" 
-                className="flex items-center gap-2 bg-[#0A0A0A] hover:bg-gray-800 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition shadow-sm"
-              >
-                <FileText className="w-4 h-4" /> Create Article
+            <div className="pt-4 border-t border-gray-200 flex justify-end">
+              <button type="submit" disabled={isSubmitting} className="bg-[#0A0A0A] hover:bg-gray-800 text-white flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium">
+                <Save className="w-4 h-4" /> Publish Article
               </button>
             </div>
 
           </form>
-
         </div>
       </main>
-
     </div>
   );
 }

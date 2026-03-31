@@ -1,166 +1,83 @@
-import React from 'react';
-import { 
-  BookOpen, 
-  Search, 
-  ChevronRight, 
-  Clock, 
-  Tag, 
-  Printer, 
-  Home
-} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { BookOpen, Calendar, Tag, ArrowLeft } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
-export default function ArticleDetail() {
+// We ontvangen hier het specifieke ID én de 'terug' functie!
+export default function ArticleDetail({ articleId, onBack }) {
+  const [article, setArticle] = useState(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    // We plakken het specifieke ID nu achter de URL
+    fetch(`http://localhost:5000/api/articles/${articleId}`)
+      .then(response => {
+        if (!response.ok) throw new Error("Artikel niet gevonden");
+        return response.json();
+      })
+      .then(data => setArticle(data))
+      .catch(err => {
+        console.error("Oeps, foutje:", err);
+        setError(true);
+      });
+  }, [articleId]);
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#FAFAFA] flex flex-col items-center justify-center">
+        <p className="text-xl text-red-500 font-bold mb-4">Oeps, dit artikel bestaat niet (meer)!</p>
+        <button onClick={onBack} className="text-blue-500 hover:underline">Ga terug</button>
+      </div>
+    );
+  }
+
+  if (!article) return <div className="min-h-screen flex items-center justify-center animate-pulse text-gray-500">Loading...</div>;
+
   return (
-    <div className="bg-[#FAFAFA] min-h-screen flex flex-col font-sans text-gray-900">
-      
-      {/* 1. Navigatiebalk */}
+    <div className="bg-[#FAFAFA] min-h-screen font-sans text-gray-900 pb-20">
       <nav className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center gap-2 font-bold text-xl text-gray-900 cursor-pointer">
-          <BookOpen className="text-blue-600 w-6 h-6" />
-          IT Knowledge Base
+        <div className="flex items-center gap-2 font-bold text-xl text-gray-900">
+          <BookOpen className="text-blue-600 w-6 h-6" /> IT Knowledge Base
         </div>
-        
-        <div className="hidden md:block w-1/3 relative">
-          <Search className="absolute left-3 top-2.5 text-gray-400 w-4 h-4" />
-          <input 
-            type="text" 
-            placeholder="Search articles..." 
-            className="w-full bg-gray-100 border border-transparent rounded-lg pl-10 pr-4 py-2 text-sm focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition"
-          />
-        </div>
-
-        <button className="border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">
-          Browse All
-        </button>
       </nav>
 
-      {/* 2. Main Content Area */}
-      <main className="flex-grow max-w-4xl mx-auto w-full px-4 sm:px-6 py-8">
+      <main className="max-w-3xl mx-auto px-6 w-full pt-8">
         
-        {/* Breadcrumbs (Kruimelpad) */}
-        <nav className="flex items-center gap-2 text-sm text-gray-500 mb-6">
-          <a href="#" className="hover:text-gray-900 flex items-center gap-1">
-            <Home className="w-4 h-4" /> Home
-          </a>
-          <ChevronRight className="w-4 h-4" />
-          <a href="#" className="hover:text-gray-900">Network & Connectivity</a>
-          <ChevronRight className="w-4 h-4" />
-          <span className="text-gray-900 font-medium">VPN Setup Guide</span>
-        </nav>
+        {/* De Terugknop doet nu écht iets! */}
+        <button onClick={onBack} className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition mb-6 font-medium text-sm">
+          <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+        </button>
 
-        {/* 3. Het Artikel Zelf (De witte kaart) */}
-        <article className="bg-white border border-gray-200 rounded-2xl p-8 md:p-12 shadow-sm mb-8">
-          
-          {/* Artikel Header */}
-          <div className="mb-8 border-b border-gray-100 pb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-3">VPN Setup Guide</h1>
-            <p className="text-lg text-gray-600 mb-6">Step-by-step instructions for connecting to the company VPN</p>
-            
-            <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
-              <div className="flex items-center gap-6 text-gray-500">
-                <span className="flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  Last updated March 5, 2026
-                </span>
-                
-                <div className="flex items-center gap-2">
-                  <Tag className="w-4 h-4" />
-                  <span className="bg-gray-100 text-gray-700 px-2.5 py-0.5 rounded-full font-medium text-xs">vpn</span>
-                  <span className="bg-gray-100 text-gray-700 px-2.5 py-0.5 rounded-full font-medium text-xs">remote</span>
-                  <span className="bg-gray-100 text-gray-700 px-2.5 py-0.5 rounded-full font-medium text-xs">security</span>
-                </div>
-              </div>
+        <span className={`${article.color || 'bg-blue-500'} text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider`}>
+          {article.category}
+        </span>
 
-              <button className="flex items-center gap-2 text-gray-600 hover:text-gray-900 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition">
-                <Printer className="w-4 h-4" />
-                Print
-              </button>
-            </div>
+        <h1 className="text-4xl font-extrabold text-gray-900 mt-4 mb-4">{article.title}</h1>
+
+        <div className="flex items-center gap-6 text-sm text-gray-500 mb-10 pb-6 border-b border-gray-200">
+          <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4" /> {article.date}</span>
+          <div className="flex items-center gap-2">
+            <Tag className="w-4 h-4" />
+            {article.tags && article.tags.map(tag => (
+              <span key={tag} className="bg-gray-100 px-2 py-0.5 rounded text-gray-600">{tag}</span>
+            ))}
           </div>
-
-          {/* Artikel Inhoud */}
-          <div className="text-gray-800 space-y-6 leading-relaxed">
-            <section>
-              <h2 className="text-xl font-bold text-gray-900 mb-3">Overview</h2>
-              <p>This guide will help you set up and connect to the company VPN for secure remote access.</p>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-bold text-gray-900 mb-3 mt-8">Prerequisites</h2>
-              <ul className="list-disc pl-5 space-y-2 text-gray-700">
-                <li>Company-issued laptop or approved personal device</li>
-                <li>VPN credentials (available from IT Help Desk)</li>
-                <li>Stable internet connection</li>
-              </ul>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-bold text-gray-900 mb-4 mt-8">Installation Steps</h2>
-              
-              <h3 className="font-bold text-lg text-gray-900 mb-2">Windows</h3>
-              <ol className="list-decimal pl-5 space-y-2 mb-6 text-gray-700">
-                <li>Download the VPN client from the IT portal</li>
-                <li>Run the installer as administrator</li>
-                <li>Enter your employee ID when prompted</li>
-                <li>Follow the on-screen installation steps</li>
-              </ol>
-
-              <h3 className="font-bold text-lg text-gray-900 mb-2">macOS</h3>
-              <ol className="list-decimal pl-5 space-y-2 text-gray-700">
-                <li>Download the VPN client from the IT portal</li>
-                <li>Open the .dmg file and drag the application to Applications folder</li>
-                <li>Launch the application and grant necessary permissions</li>
-                <li>Enter your employee ID when prompted</li>
-              </ol>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-bold text-gray-900 mb-3 mt-8">Connecting to VPN</h2>
-              <ol className="list-decimal pl-5 space-y-2 text-gray-700">
-                <li>Open the VPN application</li>
-                <li>Enter your username (usually your email address)</li>
-                <li>Enter your password</li>
-                <li>Complete the 2FA challenge on your mobile device</li>
-                <li>Click "Connect"</li>
-              </ol>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-bold text-gray-900 mb-4 mt-8">Troubleshooting</h2>
-              
-              <h3 className="font-bold text-gray-900 mb-2">Cannot connect</h3>
-              <ul className="list-disc pl-5 space-y-2 mb-6 text-gray-700">
-                <li>Verify your internet connection is working</li>
-                <li>Check that your credentials are correct</li>
-                <li>Ensure 2FA is set up on your mobile device</li>
-              </ul>
-
-              <h3 className="font-bold text-gray-900 mb-2">Slow connection</h3>
-              <ul className="list-disc pl-5 space-y-2 text-gray-700">
-                <li>Try connecting to a different VPN server</li>
-                <li>Close unnecessary applications</li>
-                <li>Contact IT if speeds remain slow</li>
-              </ul>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-bold text-gray-900 mb-3 mt-8">Support</h2>
-              <p className="text-gray-700">For additional help, contact IT Help Desk at ext. 1234 or helpdesk@company.com</p>
-            </section>
-          </div>
-        </article>
-
-        {/* 4. Support Block onderaan */}
-        <div className="bg-[#F4F8FF] border border-blue-100 rounded-2xl p-8 text-center">
-          <h3 className="text-lg font-bold text-gray-900 mb-2">Need more help?</h3>
-          <p className="text-gray-600 mb-6">
-            Contact IT Help Desk at <span className="font-semibold text-gray-900">ext. 1234</span> or <a href="mailto:helpdesk@company.com" className="text-blue-600 hover:underline">helpdesk@company.com</a>
-          </p>
-          <button className="bg-white border border-gray-300 text-gray-700 font-medium px-6 py-2 rounded-lg hover:bg-gray-50 transition shadow-sm text-sm">
-            View all Network & Connectivity articles
-          </button>
         </div>
 
+        <div className="bg-white p-8 md:p-12 rounded-2xl border border-gray-200 shadow-sm">
+          <ReactMarkdown
+            components={{
+              h1: ({node, ...props}) => <h1 className="text-3xl font-bold mt-8 mb-4 text-gray-900" {...props} />,
+              h2: ({node, ...props}) => <h2 className="text-2xl font-bold mt-8 mb-4 text-gray-900 border-b pb-2" {...props} />,
+              h3: ({node, ...props}) => <h3 className="text-xl font-bold mt-6 mb-3 text-gray-800" {...props} />,
+              p: ({node, ...props}) => <p className="mb-5 leading-relaxed text-gray-700 text-lg" {...props} />,
+              ul: ({node, ...props}) => <ul className="list-disc pl-6 mb-5 space-y-2 text-gray-700 text-lg" {...props} />,
+              strong: ({node, ...props}) => <strong className="font-bold text-gray-900" {...props} />,
+              img: ({node, ...props}) => <img className="rounded-xl shadow-md max-w-full h-auto my-8 border border-gray-100" {...props} />
+            }}
+          >
+            {article.content}
+          </ReactMarkdown>
+        </div>
       </main>
     </div>
   );
